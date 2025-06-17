@@ -1,7 +1,8 @@
-name: Deploy Rust (Wasm) to Cloudflare Workers
+name: Run CF Changle
 
 on:
   workflow_dispatch:
+
   push:
     branches:
       - master
@@ -14,36 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: cf
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain for Wasm
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - name: deploy
+        uses: cloudflare/wrangler-action@v4
         with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
-
-      - name: Install wasm-pack & binaryen
-        run: |
-          cargo install wasm-pack
-          sudo apt-get update && sudo apt-get install -y binaryen
-
-      - name: Build Wasm package
-        # Menambahkan flag RUSTFLAGS langsung ke perintah wasm-pack
-        run: RUSTFLAGS='-C target-feature=+bulk-memory' wasm-pack build --release --target web
-
-      - name: Optimize Wasm binary
-        run: |
-          wasm-opt pkg/changli_bg.wasm -o pkg/changli_bg.wasm -O \
-          --enable-bulk-memory \
-          --enable-sign-ext  \
-          --enable-saturating-float-to-int
-
-      
-      - name: Publish to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          # Pastikan file wrangler.toml Anda sudah dikonfigurasi dengan benar
-          # untuk menunjuk ke modul Wasm di dalam folder pkg/
+            apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
