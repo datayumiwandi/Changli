@@ -34,11 +34,9 @@ jobs:
         run: RUSTFLAGS='-C target-feature=+bulk-memory' wasm-pack build --release --target web
 
       - name: Optimize Wasm binary
-        # 1. Path file Wasm yang benar ada di dalam folder 'pkg/'
-        # 2. Ganti nama 'changli' dengan nama crate Rust Anda jika berbeda
-        # 3. Timpa (-o) file asli agar wrangler.toml tidak perlu diubah
         run: |
-          wasm-opt pkg/changli_bg.wasm -o pkg/changli_bg.wasm -O --enable-bulk-memory
+          wasm-opt pkg/changli_bg.wasm -o pkg/changli_bg.wasm -O --enable-all
+
       
       - name: Publish to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
