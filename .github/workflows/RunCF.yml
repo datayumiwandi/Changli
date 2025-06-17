@@ -37,7 +37,8 @@ jobs:
         run: |
           wasm-opt pkg/changli_bg.wasm -o pkg/changli_bg.wasm -O \
           --enable-bulk-memory \
-          --enable-sign-ext
+          --enable-sign-ext  \
+          --enable-saturating-float-to-int
 
       
       - name: Publish to Cloudflare Workers
