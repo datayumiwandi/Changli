@@ -16,6 +16,13 @@ command = "cargo install worker-build && worker-build --release"
 [env.dev]
 build = { command = "cargo install worker-build && worker-build --dev" }
 
+[build]
+upload.format = "modules"
+
+[build.upload]
+dir = "pkg"
+main = "./changli.js"
+
 [vars]
 UUID = "aacac2d2-cac8-442a-9f2c-4e4f807065f5"
 MAIN_PAGE_URL = "https://raw.githubusercontent.com/Mayumiwandi/Changli/refs/heads/main/web/index.html"
