@@ -12,36 +12,26 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: cf
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
-
-      - name: Install wasm-pack & binaryen
+      - name: Install Rust and wasm-pack
         run: |
+          rustup target add wasm32-unknown-unknown
           cargo install wasm-pack
-          sudo apt-get update
           sudo apt-get install -y binaryen
 
-      - name: Build with bulk-memory enabled
+      - name: Build with wasm-pack (bulk-memory enabled)
         run: |
-          RUSTFLAGS="-C target-feature=+bulk-memory" \
-          wasm-pack build --release --target web
+          echo "[package.metadata.wasm-pack.profile.release]" >> Cargo.toml
+          echo "wasm-opt = false" >> Cargo.toml
+          RUSTFLAGS="-C target-feature=+bulk-memory" wasm-pack build --release --target web
 
-      - name: Optimize Wasm with bulk-memory enabled
+      - name: Optimize Wasm manually
         run: |
-          wasm-opt -O target/wasm32-unknown-unknown/release/changli.wasm \
-          -o optimized.wasm \
-          --enable-bulk-memory
+          wasm-opt -O pkg/changli_bg.wasm -o pkg/changli_bg.opt.wasm --enable-bulk-memory
 
-      - name: Publish to Cloudflare Workers
+      - name: Publish with Wrangler
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
