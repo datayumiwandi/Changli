@@ -2,7 +2,6 @@ name: Run CF Changle
 
 on:
   workflow_dispatch:
-
   push:
     branches:
       - master
@@ -14,9 +13,35 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: cf
+
     steps:
       - uses: actions/checkout@v4
-      - name: deploy
-        uses: cloudflare/wrangler-action@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-            apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Install wasm-pack & binaryen
+        run: |
+          cargo install wasm-pack
+          sudo apt-get update
+          sudo apt-get install -y binaryen
+
+      - name: Build with bulk-memory enabled
+        run: |
+          RUSTFLAGS="-C target-feature=+bulk-memory" \
+          wasm-pack build --release --target web
+
+      - name: Optimize Wasm with bulk-memory enabled
+        run: |
+          wasm-opt -O target/wasm32-unknown-unknown/release/changli.wasm \
+          -o optimized.wasm \
+          --enable-bulk-memory
+
+      - name: Publish to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
