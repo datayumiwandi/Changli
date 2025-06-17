@@ -1,4 +1,4 @@
-name: Run CF Changle
+name: Deploy Rust (Wasm) to Cloudflare Workers
 
 on:
   workflow_dispatch:
@@ -12,26 +12,37 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: cf
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install Rust and wasm-pack
+      - name: Install Rust toolchain for Wasm
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Install wasm-pack & binaryen
         run: |
-          rustup target add wasm32-unknown-unknown
           cargo install wasm-pack
-          sudo apt-get install -y binaryen
+          sudo apt-get update && sudo apt-get install -y binaryen
 
-      - name: Build with wasm-pack (bulk-memory enabled)
+      - name: Build Wasm package
+        # Menambahkan flag RUSTFLAGS langsung ke perintah wasm-pack
+        run: RUSTFLAGS='-C target-feature=+bulk-memory' wasm-pack build --release --target web
+
+      - name: Optimize Wasm binary
+        # 1. Path file Wasm yang benar ada di dalam folder 'pkg/'
+        # 2. Ganti nama 'changli' dengan nama crate Rust Anda jika berbeda
+        # 3. Timpa (-o) file asli agar wrangler.toml tidak perlu diubah
         run: |
-          echo "[package.metadata.wasm-pack.profile.release]" >> Cargo.toml
-          echo "wasm-opt = false" >> Cargo.toml
-          RUSTFLAGS="-C target-feature=+bulk-memory" wasm-pack build --release --target web
-
-      - name: Optimize Wasm manually
-        run: |
-          wasm-opt -O pkg/changli_bg.wasm -o pkg/changli_bg.opt.wasm --enable-bulk-memory
-
-      - name: Publish with Wrangler
+          wasm-opt pkg/changli_bg.wasm -o pkg/changli_bg.wasm -O --enable-bulk-memory
+      
+      - name: Publish to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Pastikan file wrangler.toml Anda sudah dikonfigurasi dengan benar
+          # untuk menunjuk ke modul Wasm di dalam folder pkg/
