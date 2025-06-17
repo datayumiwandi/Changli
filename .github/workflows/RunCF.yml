@@ -35,7 +35,9 @@ jobs:
 
       - name: Optimize Wasm binary
         run: |
-          wasm-opt pkg/changli_bg.wasm -o pkg/changli_bg.wasm -O --enable-all
+          wasm-opt pkg/changli_bg.wasm -o pkg/changli_bg.wasm -O \
+          --enable-bulk-memory \
+          --enable-sign-ext
 
       
       - name: Publish to Cloudflare Workers
