@@ -1,4 +1,4 @@
-name: Run CF Changle
+name: Deploy to Cloudflare Workers
 
 on:
   workflow_dispatch:
@@ -21,12 +21,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # versi Node.js yang kompatibel dengan wrangler terbaru
+          node-version: '20'
 
       - name: Install latest wrangler
         run: npm install -g wrangler
 
       - name: Publish to Cloudflare Workers
-        run: wrangler deploy
-        with:
+        # Gunakan 'env:' untuk mengekspos secret sebagai environment variable
+        env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: wrangler deploy
